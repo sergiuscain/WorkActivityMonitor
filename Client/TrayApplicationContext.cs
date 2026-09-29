@@ -15,6 +15,8 @@ namespace Client
         {
             SimpleLogger.Log("Application started");
 
+            AutoStartManager.Enable();
+
             _api = new ApiClient(ServerUrl);
 
             _timer = new System.Windows.Forms.Timer { Interval = 10_000 };
