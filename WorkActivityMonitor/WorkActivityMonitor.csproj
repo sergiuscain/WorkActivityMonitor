@@ -17,7 +17,6 @@
     <Folder Include="Data\" />
     <Folder Include="Services\" />
     <Folder Include="Storage\" />
-    <Folder Include="Dtos\" />
   </ItemGroup>
 
 </Project>
