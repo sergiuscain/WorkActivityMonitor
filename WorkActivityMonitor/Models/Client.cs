@@ -8,6 +8,8 @@ public class Client
     public string Domain { get; set; }
     public string IpAddress { get; set; }
     public DateTime LastActiveTime { get; set; }
+    public DateTime FirstSeenTime { get; set; }
+    public bool PendingScreenshotRequest { get; set; }
 
     // Навигационное свойство
     public List<Screenshot> Screenshots { get; set; } = new();
