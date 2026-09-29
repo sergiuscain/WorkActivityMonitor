@@ -1,30 +1,60 @@
-﻿
-namespace Client;
+﻿using Client.Core;
+using Client.Models;
 
-internal class TrayApplicationContext : ApplicationContext
+namespace Client
 {
-    private readonly System.Windows.Forms.Timer _timer;
-    public TrayApplicationContext()
+    internal class TrayApplicationContext : ApplicationContext
     {
-        SimpleLogger.Log("Application started");
+        private readonly System.Windows.Forms.Timer _timer;
+        private readonly ApiClient _api;
 
-        _timer = new System.Windows.Forms.Timer { Interval = 10_000 }; // 10 секунд
-        _timer.Tick += OnTimerTick;
-        _timer.Start();
-    }
+        // Позже вынесу в appsettings.json
+        private const string ServerUrl = "https://localhost:7068";
 
-    private void OnTimerTick(object? sender, EventArgs e)
-    {
-        SimpleLogger.Log("Tick");
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing)
+        public TrayApplicationContext()
         {
-            _timer?.Stop();
-            _timer?.Dispose();
+            SimpleLogger.Log("Application started");
+
+            _api = new ApiClient(ServerUrl);
+
+            _timer = new System.Windows.Forms.Timer { Interval = 10_000 };
+            _timer.Tick += OnTimerTick;
+            _timer.Start();
         }
-        base.Dispose(disposing);
+
+        private async void OnTimerTick(object? sender, EventArgs e)
+        {
+            try
+            {
+                var request = new HeartbeatRequest
+                {
+                    MachineName = Environment.MachineName,
+                    UserName = Environment.UserName,
+                    Domain = Environment.UserDomainName
+                };
+
+                var response = await _api.SendHeartbeatAsync(request);
+
+                if (response != null)
+                {
+                    SimpleLogger.Log($"Heartbeat OK: ClientId={response.ClientId}, TakeScreenshot={response.TakeScreenshot}");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Последняя защита: async void не должен уронить приложение
+                SimpleLogger.Log($"Tick error: {ex.Message}");
+            }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _timer?.Stop();
+                _timer?.Dispose();
+            }
+            base.Dispose(disposing);
+        }
     }
 }
