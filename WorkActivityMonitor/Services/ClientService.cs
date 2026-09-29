@@ -49,7 +49,6 @@ public class ClientService
     {
         var now = DateTime.UtcNow;
 
-        // Ищем клиента по тройке (машина + пользователь + домен)
         var client = await _db.Clients
             .FirstOrDefaultAsync(c =>
                 c.MachineName == request.MachineName &&
@@ -58,10 +57,6 @@ public class ClientService
 
         if (client is null)
         {
-            // Новый клиент
-            _logger.LogInformation("New client: {Machine}/{User}@{Domain} from {Ip}",
-                request.MachineName, request.UserName, request.Domain, ipAddress);
-
             client = new Client
             {
                 MachineName = request.MachineName,
@@ -82,10 +77,17 @@ public class ClientService
 
         await _db.SaveChangesAsync(ct);
 
+        var takeScreenshot = client.PendingScreenshotRequest;
+        if (takeScreenshot)
+        {
+            client.PendingScreenshotRequest = false;
+            await _db.SaveChangesAsync(ct);
+        }
+
         return new HeartbeatResponse
         {
             ClientId = client.Id,
-            TakeScreenshot = false,
+            TakeScreenshot = takeScreenshot,
             HeartbeatIntervalSeconds = 10
         };
     }
