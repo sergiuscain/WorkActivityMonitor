@@ -35,14 +35,39 @@ namespace Client
 
                 var response = await _api.SendHeartbeatAsync(request);
 
-                if (response != null)
+                if (response == null)
                 {
-                    SimpleLogger.Log($"Heartbeat OK: ClientId={response.ClientId}, TakeScreenshot={response.TakeScreenshot}");
+                    return;
+                }
+
+                SimpleLogger.Log($"Heartbeat OK: ClientId={response.ClientId}, TakeScreenshot={response.TakeScreenshot}");
+
+                if (response.TakeScreenshot)
+                {
+                    try
+                    {
+                        var png = ScreenshotService.CaptureScreen();
+                        SimpleLogger.Log($"Screenshot captured: {png.Length} bytes");
+
+                        var uploaded = await _api.UploadScreenshotAsync(response.ClientId, png);
+
+                        if (uploaded)
+                        {
+                            SimpleLogger.Log("Screenshot uploaded successfully");
+                        }
+                        else
+                        {
+                            SimpleLogger.Log("Screenshot upload failed");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        SimpleLogger.Log($"Screenshot processing failed: {ex.Message}");
+                    }
                 }
             }
             catch (Exception ex)
             {
-                // Последняя защита: async void не должен уронить приложение
                 SimpleLogger.Log($"Tick error: {ex.Message}");
             }
         }

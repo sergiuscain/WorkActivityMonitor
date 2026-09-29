@@ -60,5 +60,37 @@ namespace Client.Core
                 return null;
             }
         }
+
+        public async Task<bool> UploadScreenshotAsync(int clientId, byte[] pngBytes)
+        {
+            try
+            {
+                var url = $"{_baseUrl}/api/clients/{clientId}/screenshot";
+
+                using var form = new MultipartFormDataContent();
+                using var fileContent = new ByteArrayContent(pngBytes);
+                fileContent.Headers.ContentType =
+                    new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+
+                form.Add(fileContent, "file", $"screenshot_{DateTime.Now:yyyyMMdd_HHmmss}.png");
+
+                using var response = await _http.PostAsync(url, form);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync();
+                    SimpleLogger.Log($"Screenshot upload failed: {(int)response.StatusCode} {response.ReasonPhrase}. Body: {body}");
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                SimpleLogger.Log($"Screenshot upload exception: {ex.Message}");
+                SimpleLogger.Log($"Inner: {ex.InnerException?.Message}");
+                return false;
+            }
+        }
     }
 }
